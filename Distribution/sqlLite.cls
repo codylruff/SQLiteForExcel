@@ -12,8 +12,8 @@ Option Explicit
 Private m_cabecalho As Variant
 Private m_dados As Variant
 Private m_dbPath As String
-Private m_qtdLinhas As Long
-Private m_qtdColunas As Long
+Private m_qtyRows As Long
+Private m_qtyColumns As Long
 '================================================================
 'init type when querying
 Private Enum initType
@@ -146,8 +146,7 @@ Private Declare Function sqlite3_stdcall_changes Lib "SQLite3_StdCall" Alias "_s
 Private Declare Function sqlite3_stdcall_total_changes Lib "SQLite3_StdCall" Alias "_sqlite3_stdcall_total_changes@4" (ByVal hDb As Long) As Long
 '----------------------------------
 ' Statements
-Private Declare Function sqlite3_stdcall_prepare16_v2 Lib "SQLite3_StdCall" Alias "_sqlite3_stdcall_prepare16_v2@20" _
-    (ByVal hDb As Long, ByVal pwsSql As Long, ByVal nSqlLength As Long, ByRef hStmt As Long, ByVal ppwsTailOut As Long) As Long
+Private Declare Function sqlite3_stdcall_prepare16_v2 Lib "SQLite3_StdCall" Alias "_sqlite3_stdcall_prepare16_v2@20" (ByVal hDb As Long, ByVal pwsSql As Long, ByVal nSqlLength As Long, ByRef hStmt As Long, ByVal ppwsTailOut As Long) As Long
 Private Declare Function sqlite3_stdcall_step Lib "SQLite3_StdCall" Alias "_sqlite3_stdcall_step@4" (ByVal hStmt As Long) As Long
 Private Declare Function sqlite3_stdcall_reset Lib "SQLite3_StdCall" Alias "_sqlite3_stdcall_reset@4" (ByVal hStmt As Long) As Long
 Private Declare Function sqlite3_stdcall_finalize Lib "SQLite3_StdCall" Alias "_sqlite3_stdcall_finalize@4" (ByVal hStmt As Long) As Long
@@ -194,18 +193,17 @@ Private Declare Function sqlite3_stdcall_backup_pagecount Lib "SQLite3_StdCall" 
 ' Initialize - load libraries explicitly
 Private hSQLiteLibrary As Long
 Private hSQLiteStdCallLibrary As Long
-
 '================================================================
 'caminho do database
 Public Property Get dbPath() As Variant:  dbPath = m_dbPath: End Property
 Public Property Let dbPath(ByVal vNewValue As Variant): m_dbPath = vNewValue: End Property
-
+'================================================================
 'cabecalho da aplicacao
 Public Property Get cabecalho() As Variant: cabecalho = m_cabecalho: End Property
-Public Property Get dados() As Variant: dados = m_dados: End Property 'dados da aplicacao
-Public Property Get qtdLinhas() As Long: qtdLinhas = m_qtdLinhas: End Property 'quantidade de linhas
-Public Property Get qtdColunas() As Long: qtdColunas = m_qtdColunas: End Property 'quantidade de colunas
-
+Public Property Get data() As Variant: data = m_dados: End Property 'dados da aplicacao
+Public Property Get qtyRows() As Long: qtyRows = m_qtyRows: End Property 'quantidade de linhas
+Public Property Get qtyColumns() As Long: qtyColumns = m_qtyColumns: End Property 'quantidade de colunas
+'================================================================
 Private Function SQLite3Initialize(Optional ByVal libDir As String) As Long
     ' A nice option here is to call SetDllDirectory, but that API is only available since Windows XP SP1.
     If libDir = "" Then libDir = ThisWorkbook.Path
@@ -251,7 +249,6 @@ End Sub
 
 '=====================================================================================
 ' SQLite library version
-
 Private Function SQLite3LibVersion() As String
     SQLite3LibVersion = Utf8PtrToString(sqlite3_stdcall_libversion())
 End Function
@@ -280,7 +277,6 @@ End Function
 
 '=====================================================================================
 ' Error information
-
 Private Function SQLite3ErrMsg(ByVal dbHandle As Long) As String
     SQLite3ErrMsg = Utf8PtrToString(sqlite3_stdcall_errmsg(dbHandle))
 End Function
@@ -295,7 +291,6 @@ End Function
 
 '=====================================================================================
 ' Change Counts
-
 Private Function SQLite3Changes(ByVal dbHandle As Long) As Long
     SQLite3Changes = sqlite3_stdcall_changes(dbHandle)
 End Function
@@ -306,7 +301,6 @@ End Function
 
 '=====================================================================================
 ' Statements
-
 Private Function SQLite3PrepareV2(ByVal dbHandle As Long, ByVal sql As String, ByRef stmtHandle As Long) As Long
     ' Only the first statement (up to ';') is prepared. Currently we don't retrieve the 'tail' pointer.
     SQLite3PrepareV2 = sqlite3_stdcall_prepare16_v2(dbHandle, StrPtr(sql), Len(sql) * 2, stmtHandle, 0)
@@ -326,7 +320,6 @@ End Function
 
 '=====================================================================================
 ' Statement column access (0-based indices)
-
 Private Function SQLite3ColumnCount(ByVal stmtHandle As Long) As Long
     SQLite3ColumnCount = sqlite3_stdcall_column_count(stmtHandle)
 End Function
@@ -359,7 +352,7 @@ Private Function SQLite3ColumnBlob(ByVal stmtHandle As Long, ByVal ZeroBasedColI
     Dim ptr As Long
     Dim length As Long
     Dim buf() As Byte
-    
+    '------------------
     ptr = sqlite3_stdcall_column_blob(stmtHandle, ZeroBasedColIndex)
     length = sqlite3_stdcall_column_bytes(stmtHandle, ZeroBasedColIndex)
     ReDim buf(length - 1)
@@ -369,7 +362,6 @@ End Function
 
 '=====================================================================================
 ' Statement bindings
-
 Private Function SQLite3BindText(ByVal stmtHandle As Long, ByVal OneBasedParamIndex As Long, ByVal Value As String) As Long
     SQLite3BindText = sqlite3_stdcall_bind_text16(stmtHandle, OneBasedParamIndex, StrPtr(Value), -1, SQLITE_TRANSIENT)
 End Function
@@ -414,7 +406,6 @@ Private Function SQLite3ClearBindings(ByVal stmtHandle As Long) As Long
     SQLite3ClearBindings = sqlite3_stdcall_clear_bindings(stmtHandle)
 End Function
 
-
 '=====================================================================================
 ' Backup
 Private Function SQLite3Sleep(ByVal timeToSleepInMs As Long) As Long
@@ -445,6 +436,7 @@ Private Function SQLite3BackupRemaining(ByVal backupHandle As Long) As Long
     SQLite3BackupRemaining = sqlite3_stdcall_backup_remaining(backupHandle)
 End Function
 
+' =========================================='
 ' String Helpers
 Private Function Utf8PtrToString(ByVal pUtf8String As Long) As String
     Dim buf As String
@@ -542,10 +534,10 @@ Private Function initQuery(q_comand As initType, _
     If RetVal = SQLITE_DONE Then Debug.Print "done"
   '--------------------------------
   ElseIf q_comand = getRows Then
-    m_qtdLinhas = getRowsCount(myStmtHandle) ' pega o numero de linhas
+    m_qtyRows = getRowsCount(myStmtHandle) ' pega o numero de linhas
   '--------------------------------
   ElseIf q_comand = getColumns Then
-    m_qtdColunas = SQLite3ColumnCount(myStmtHandle)
+    m_qtyColumns = SQLite3ColumnCount(myStmtHandle)
   End If
   '----------------------------------------------'
 End Function
@@ -559,17 +551,17 @@ Private Sub getQryValue(ByVal stmtHandle As Long)
     Dim arrDados() As Variant, arrCabecalho As Variant
     Dim rowsCount As Long
     '--------------------------
-    ReDim arrDados(1 To qtdLinhas, 1 To Me.qtdColunas) 'redimensao dos dados
-    ReDim arrCabecalho(1 To 1, 1 To Me.qtdColunas) 'redimensao do cabecalho
+    ReDim arrDados(1 To qtyRows, 1 To Me.qtyColumns) 'redimensao dos dados
+    ReDim arrCabecalho(1 To 1, 1 To Me.qtyColumns) 'redimensao do cabecalho
     '--------------------------
     Dim i As Long, j As Long, k As Long, m As Long
     '--------------------------------------
     colType = SQLite3ColumnType(stmtHandle, 0)
     '--------------------------------------
-    For m = 1 To Me.qtdLinhas 'itera pelas linhas
+    For m = 1 To Me.qtyRows 'itera pelas linhas
       k = k + 1 'adiciona uma nova linha
       '///////////////
-      For i = 0 To Me.qtdColunas - 1 'itera pelas colunas
+      For i = 0 To Me.qtyColumns - 1 'itera pelas colunas
         '=============================
         colName = SQLite3ColumnName(stmtHandle, i)
         If arrCabecalho(1, i + 1) = "" Then arrCabecalho(1, i + 1) = colName
@@ -588,3 +580,28 @@ Private Sub getQryValue(ByVal stmtHandle As Long)
     m_dados = arrDados 'contem os dados
     m_cabecalho = arrCabecalho 'contem o cabecalho
 End Sub
+
+'retorna a quantidade de linhas da query
+Private Function getRowsCount(ByVal stmtHandle As Long) As Long
+  Dim ystmtHandle As Long, colType As Long
+  Dim k As Long
+  ystmtHandle = stmtHandle
+  '------------------------------
+  colType = SQLite3ColumnType(ystmtHandle, 0)
+  getRowsCount = ColumnValue(ystmtHandle, 0, colType) 'return
+End Function
+
+Private Function ColumnValue(ByVal stmtHandle As Long, ByVal ZeroBasedColIndex As Long, ByVal SQLiteType As Long) As Variant
+    Select Case SQLiteType
+        Case SQLITE_INTEGER:
+            ColumnValue = SQLite3ColumnInt32(stmtHandle, ZeroBasedColIndex)
+        Case SQLITE_FLOAT:
+            ColumnValue = SQLite3ColumnDouble(stmtHandle, ZeroBasedColIndex)
+        Case SQLITE_TEXT:
+            ColumnValue = SQLite3ColumnText(stmtHandle, ZeroBasedColIndex)
+        Case SQLITE_BLOB:
+            ColumnValue = SQLite3ColumnText(stmtHandle, ZeroBasedColIndex)
+        Case SQLITE_NULL:
+            ColumnValue = Null
+    End Select
+End Function
