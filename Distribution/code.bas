@@ -7,8 +7,8 @@ Public Sub exampleCreateTable()
   '----------------------------------------------'
   Dim qry As Variant, dbPath As String
   '----------------------------------------------'
-  sqlLite.dbPath = ActiveWorkbook.Path & "\db\test.db"
-  'sqlLite_qry.execute "create table abc (a string, b string)" 'faz o select na base de dados e printa as colunas do print'
+  sqlLite.openDb ActiveWorkbook.Path & "\db\test.db"
+  sqlLite.execute "creates table abc (a string, b string)" 'faz o select na base de dados e printa as colunas do print'
   'sqlLite_qry.execute "delete from testeNum" 'comando delete
   '----------------------------------------------'
 End Sub
@@ -19,9 +19,9 @@ Public Sub exampleInsert()
   '----------------------------------------------'
   Dim qry As Variant, dbPath As String
   '----------------------------------------------'
-  sqlLite.dbPath = ActiveWorkbook.Path & "\db\test.db"
-  'sqlLite_qry.execute "insert into testeNum(numeros) values(44000),(55000) "  '2 values insert
-  sqlLite.execute "insert into testeNum(numeros) values" & montaQueryInsertToTeste   'multiple values
+  sqlLite.openDb ActiveWorkbook.Path & "\db\test.db"
+  sqlLite.execute "insert into testeNum(numeros) values(44000),(55000) "  '2 values insert
+  'sqlLite.execute "insert into testeNum(numeros) values" & montaQueryInsertToTeste   'multiple values
   '----------------------------------------------'
 End Sub
 
@@ -31,11 +31,11 @@ Public Sub exampleSelect()
   '----------------------------------------------'
   Dim qry As Variant, dbPath As String
   '----------------------------------------------'
-  sqlLite.dbPath = ActiveWorkbook.Path & "\db\test.db"
+  sqlLite.openDb ActiveWorkbook.Path & "\db\test.db"
   sqlLite.selectQry "select * from testeNum limit 100"  'faz o select na base de dados e printa as colunas do print'
   '----------------------------------------------'
-  Range(Cells(1, 1), Cells(1, sqlLite.qtdColunas)).Value = sqlLite.cabecalho 'cola cabecalho
-  Range(Cells(2, 1), Cells(sqlLite.qtdLinhas + 1, sqlLite.qtdColunas)).Value = sqlLite.dados 'cola os dados
+  Range(Cells(1, 1), Cells(1, sqlLite.qtyColumns)).Value = sqlLite.header 'cola cabecalho
+  Range(Cells(2, 1), Cells(sqlLite.qtyRows + 1, sqlLite.qtyColumns)).Value = sqlLite.data 'cola os dados
   '----------------------------------------------'
 End Sub
 

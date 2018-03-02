@@ -196,10 +196,10 @@ Private hSQLiteStdCallLibrary As Long
 '================================================================
 'caminho do database
 Public Property Get dbPath() As Variant:  dbPath = m_dbPath: End Property
-Public Property Let dbPath(ByVal vNewValue As Variant): m_dbPath = vNewValue: End Property
+Private Property Let dbPath(ByVal vNewValue As Variant): m_dbPath = vNewValue: End Property
 '================================================================
 'cabecalho da aplicacao
-Public Property Get cabecalho() As Variant: cabecalho = m_cabecalho: End Property
+Public Property Get header() As Variant: header = m_cabecalho: End Property
 Public Property Get data() As Variant: data = m_dados: End Property 'dados da aplicacao
 Public Property Get qtyRows() As Long: qtyRows = m_qtyRows: End Property 'quantidade de linhas
 Public Property Get qtyColumns() As Long: qtyColumns = m_qtyColumns: End Property 'quantidade de colunas
@@ -529,9 +529,9 @@ Private Function initQuery(q_comand As initType, _
   RetVal = SQLite3PrepareV2(myDbHandle, ssql, myStmtHandle)
   RetVal = SQLite3Step(myStmtHandle) 'vai pra primeiro registro
   '----------------------------------------------'
-  If q_comand = executa Then
+  If q_comand = executa Then 'quando excuta o comando, valida se foi executado
     RetVal = SQLite3PrepareV2(myDbHandle, ssql, myStmtHandle) 'executa a query
-    If RetVal = SQLITE_DONE Then Debug.Print "done"
+    If RetVal <> SQLITE_DONE Then Err.Raise 1, "Database not found", "Database command error"
   '--------------------------------
   ElseIf q_comand = getRows Then
     m_qtyRows = getRowsCount(myStmtHandle) ' pega o numero de linhas
@@ -590,7 +590,7 @@ Private Function getRowsCount(ByVal stmtHandle As Long) As Long
   colType = SQLite3ColumnType(ystmtHandle, 0)
   getRowsCount = ColumnValue(ystmtHandle, 0, colType) 'return
 End Function
-
+'
 Private Function ColumnValue(ByVal stmtHandle As Long, ByVal ZeroBasedColIndex As Long, ByVal SQLiteType As Long) As Variant
     Select Case SQLiteType
         Case SQLITE_INTEGER:
@@ -605,3 +605,14 @@ Private Function ColumnValue(ByVal stmtHandle As Long, ByVal ZeroBasedColIndex A
             ColumnValue = Null
     End Select
 End Function
+
+'abre o banco de dados
+Public Sub openDb(sqliPath As String)
+  '---------------------------------
+  If sqliPath = "" Or Len(Dir(sqliPath)) = 0 Then
+    Err.Raise 1, "Database not found", "Please select a valid file address"
+    Exit Sub
+  End If
+  '---------------------------------
+  dbPath = sqliPath 'seta o endereco do bd na base
+End Sub
