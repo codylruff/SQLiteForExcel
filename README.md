@@ -1,7 +1,11 @@
 # Overview
 This project is a fork from the original and completed version! I just tried to simplify some things!
-* All the behaviour is encapsuled inside one class module called: 'sqlLite'
 
+All the behaviour is encapsuled inside one class module called: 'sqlLite'
+
+## List files:
+* code.base // a module containing 'howto' code
+* sqlLite.cls // class module wrapper of SQLite
 
 ## List of methods:
 
