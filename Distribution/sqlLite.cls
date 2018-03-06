@@ -520,7 +520,7 @@ Private Function initQuery(q_comand As initType, _
                           ssql As String) As Double
   '----------------------------------------------'
   Dim RetVal As Long
-  Dim stepMsg As String, InitReturn As Long
+  Dim stepMsg As String, InitReturn As Long, msgErro As Long
   Dim myDbHandle As Long
   InitReturn = SQLite3Initialize ' Default path is ThisWorkbook.Path but can specify other path where the .dlls reside.
   '----------------------------------------------'
@@ -528,10 +528,11 @@ Private Function initQuery(q_comand As initType, _
   RetVal = SQLite3Open(dbPath, myDbHandle) 'abre o db
   RetVal = SQLite3PrepareV2(myDbHandle, ssql, myStmtHandle)
   RetVal = SQLite3Step(myStmtHandle) 'vai pra primeiro registro
+  msgErro = RetVal '<--- pega o retorna da msg da execucao
   '----------------------------------------------'
   If q_comand = executa Then 'quando excuta o comando, valida se foi executado
     RetVal = SQLite3PrepareV2(myDbHandle, ssql, myStmtHandle) 'executa a query
-    If RetVal <> SQLITE_DONE Then Err.Raise 1, "Database not found", "Database command error"
+    If msgErro <> SQLITE_DONE Then Err.Raise 1, "Database not found", "Database command error " & msgErro
   '--------------------------------
   ElseIf q_comand = getRows Then
     m_qtyRows = getRowsCount(myStmtHandle) ' pega o numero de linhas
